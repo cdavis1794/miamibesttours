@@ -1,0 +1,9 @@
+[images]
+remote_images = ["https://images\\.unsplash\\.com/.*"]
+
+[[headers]]
+for = "/*"
+
+[headers.values]
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "strict-origin-when-cross-origin"
