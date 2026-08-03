@@ -7,6 +7,9 @@
   <meta name="description" content="Read Miami tour guides, local tips, and curated comparisons for boat cruises, Everglades trips, island escapes, and more.">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://miamibesttours.tours/blog/">
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon.png">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Miami's Best Tours">
   <meta property="og:title" content="Miami Tour Guides & Local Tips">
@@ -22,7 +25,8 @@
     .wrap{width:min(1080px,calc(100% - 40px));margin:0 auto}
     header{padding:22px 0;border-bottom:1px solid #e7e5e4}
     header .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}
-    .brand{font-family:Fraunces,serif;font-weight:800;text-decoration:none;font-size:18px}
+    .brand{display:inline-flex;align-items:center;gap:10px;font-family:Fraunces,serif;font-weight:800;text-decoration:none;font-size:18px}
+    .brand-logo{width:34px;height:34px;object-fit:contain}
     .home{font-size:13px;color:#57534e;text-underline-offset:3px}
     main{padding:72px 0 96px}
     .eyebrow{display:inline-block;padding:6px 11px;border-radius:999px;background:#ccfbf1;color:#115e59;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
@@ -42,13 +46,13 @@
     @media(max-width:760px){main{padding-top:48px}.card{grid-template-columns:1fr}.card img{min-height:240px;height:240px}.content{padding:28px}h2{font-size:28px}}
   </style>
   <script type="application/ld+json">
-    {"@context":"https://schema.org","@type":"Blog","name":"Miami's Best Tours Guides","url":"https://miamibesttours.tours/blog/","description":"Miami tour guides, local tips, and curated experience comparisons.","publisher":{"@type":"Organization","name":"Miami's Best Tours","url":"https://miamibesttours.tours/"}}
+    {"@context":"https://schema.org","@type":"Blog","name":"Miami's Best Tours Guides","url":"https://miamibesttours.tours/blog/","description":"Miami tour guides, local tips, and curated experience comparisons.","publisher":{"@type":"Organization","@id":"https://miamibesttours.tours/#organization","name":"Miami's Best Tours","url":"https://miamibesttours.tours/","logo":{"@type":"ImageObject","url":"https://miamibesttours.tours/logo.png","width":512,"height":512}}}
   </script>
 </head>
 <body>
   <header>
     <div class="wrap">
-      <a class="brand" href="/">MIAMI'S BEST TOURS</a>
+      <a class="brand" href="/"><img class="brand-logo" src="/logo.png" alt="" width="34" height="34"> <span>MIAMI'S BEST TOURS</span></a>
       <a class="home" href="/">Back to all tours</a>
     </div>
   </header>
