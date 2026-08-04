@@ -27,7 +27,7 @@ const durationFor = (duration = {}) => {
 };
 
 export default async () => {
-  const apiKey = process.env.VIATOR_API_KEY;
+  const apiKey = process.env.VIATOR_API_KEY?.trim().replace(/^['\"]|['\"]$/g, \"\");
   if (!apiKey) return json(503, { error: "Tour availability is temporarily unavailable." });
 
   try {
