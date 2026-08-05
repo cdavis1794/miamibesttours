@@ -20,14 +20,14 @@
 
   const mount = async () => {
     if (document.getElementById("live-viator-tours")) return;
-    const footer = document.querySelector("#root footer");
-    if (!footer) return setTimeout(mount, 250);
+    const target = document.querySelector("#root #tours");
+    if (!target) return setTimeout(mount, 250);
 
     const section = document.createElement("section");
     section.id = "live-viator-tours";
     section.className = "viator-live";
     section.innerHTML = '<div class="viator-live-inner"><div class="viator-live-kicker">Updated from Viator</div><h2>Miami tours with live pricing</h2><p class="viator-live-intro">A focused selection from Viator’s current Miami inventory. Prices and availability can change; open a tour to confirm the final details.</p><div class="viator-live-status" role="status">Loading current tour options…</div><div class="viator-live-grid"></div><p class="viator-live-disclosure">Affiliate disclosure: Miami’s Best Tours may earn a commission when you book through these links, at no extra cost to you. Viator completes the transaction and provides booking support.</p></div>';
-    footer.before(section);
+    target.before(section);
 
     try {
       const response = await fetch("/.netlify/functions/viator-tours", { headers: { Accept: "application/json" } });
