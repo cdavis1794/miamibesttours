@@ -50,7 +50,7 @@ export default async () => {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       console.error("Viator API request failed", response.status, data?.code || data?.message || "unknown");
-      return json(502, { error: "Live tour results are temporarily unavailable.", upstreamStatus: response.status, upstreamCode: data?.code || null, upstreamMessage: data?.message || null });
+      return json(502, { error: "Live tour results are temporarily unavailable." });
     }
 
     const products = (data.products || [])
