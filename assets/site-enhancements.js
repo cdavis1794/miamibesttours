@@ -7,7 +7,7 @@
     if (footer && blogBar && blogBar.nextElementSibling !== hub) footer.before(blogBar);
     if (footer && hub && hub.nextElementSibling !== footer) footer.before(hub);
     if (blogBar) blogBar.hidden = false;
-    if (hub) hub.hidden = false;
+    if (footer && hub) hub.hidden = false;
     if (footer && !footer.querySelector('.site-trust-links')) {
       const target = footer.querySelector('[class*="border-t"]') || footer.lastElementChild || footer;
       target.insertAdjacentHTML('beforeend', links);
