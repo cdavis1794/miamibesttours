@@ -4,7 +4,6 @@
     const footer = document.querySelector('#root footer');
     const hub = document.getElementById('miami-guides');
     const blogBar = document.querySelector('.site-blog-bar');
-    if (footer && blogBar && blogBar.nextElementSibling !== hub) footer.before(blogBar);
     if (footer && hub && hub.nextElementSibling !== footer) footer.before(hub);
     if (blogBar) blogBar.hidden = false;
     if (footer && hub) hub.hidden = false;
@@ -13,6 +12,13 @@
       target.insertAdjacentHTML('beforeend', links);
     }
   };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', place); else place();
-  setTimeout(place, 600);
+  const settle = () => {
+    let attempts = 0;
+    const retry = () => {
+      place();
+      if (attempts++ < 20 && !document.querySelector('#root footer')) setTimeout(retry, 250);
+    };
+    retry();
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', settle); else settle();
 })();

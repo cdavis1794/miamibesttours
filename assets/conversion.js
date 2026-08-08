@@ -43,7 +43,9 @@
     const form = document.querySelector('form[name="miami-product-feedback"]');
     if (form) form.addEventListener("submit", () => track("feedback_submitted", { product: form.querySelector('[name="product"]')?.value || "" }));
     if (new URLSearchParams(location.search).get("feedback") === "thanks") { const thanks = document.querySelector(".feedback-thanks"); if (thanks) thanks.hidden = false; }
-    setTimeout(place, 0); setTimeout(place, 400); setTimeout(place, 1400);
+    let attempts = 0;
+    const settle = () => { place(); if (attempts++ < 20) setTimeout(settle, 250); };
+    settle();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();
