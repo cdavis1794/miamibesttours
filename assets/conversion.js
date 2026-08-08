@@ -10,12 +10,20 @@
   const place = () => {
     const footer = document.querySelector("#root footer");
     const packages = document.querySelector(".tcp-packages");
-    if (footer && packages && packages.nextElementSibling !== footer) footer.before(packages);
+    if (footer && packages) {
+      if (packages.nextElementSibling !== footer) footer.before(packages);
+      packages.classList.remove("layout-pending");
+    }
     const live = document.getElementById("live-viator-tours");
     const main = document.querySelector("#root #tours");
     const bridge = document.getElementById("miami-plan-bridge");
-    if (live && bridge && live.nextElementSibling !== bridge) live.after(bridge);
-    else if (main && bridge && !live && main.previousElementSibling !== bridge) main.before(bridge);
+    if (live && bridge) {
+      if (live.nextElementSibling !== bridge) live.after(bridge);
+      bridge.classList.remove("layout-pending");
+    } else if (main && bridge && !live) {
+      if (main.previousElementSibling !== bridge) main.before(bridge);
+      bridge.classList.remove("layout-pending");
+    }
     if (main && !main.querySelector(".editorial-note")) {
       const heading = main.querySelector("h2");
       if (heading) { const note = document.createElement("p"); note.className = "editorial-note"; note.textContent = "Editorial shortlist. Ratings, prices, ticket formats, and cancellation terms can change; open Viator to confirm the current details."; heading.after(note); }
@@ -35,7 +43,7 @@
     const form = document.querySelector('form[name="miami-product-feedback"]');
     if (form) form.addEventListener("submit", () => track("feedback_submitted", { product: form.querySelector('[name="product"]')?.value || "" }));
     if (new URLSearchParams(location.search).get("feedback") === "thanks") { const thanks = document.querySelector(".feedback-thanks"); if (thanks) thanks.hidden = false; }
-    place(); setTimeout(place, 400); setTimeout(place, 1400);
+    setTimeout(place, 0); setTimeout(place, 400); setTimeout(place, 1400);
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();

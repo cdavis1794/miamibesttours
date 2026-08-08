@@ -1722,6 +1722,9 @@
         color: #fff;
         padding: 72px 24px;
       }
+      .layout-pending {
+        display: none !important;
+      }
       .tcp-packages * {
         box-sizing: border-box;
       }
@@ -1946,7 +1949,7 @@
     </section>
     <div id="root"></div>
     <section
-      class="tcp-packages"
+      class="tcp-packages layout-pending"
       id="trip-planners"
       aria-labelledby="trip-planners-title"
       data-product-view
@@ -2060,7 +2063,7 @@
         </p>
       </div>
     </section>
-    <aside class="miami-plan-bridge" id="miami-plan-bridge">
+    <aside class="miami-plan-bridge layout-pending" id="miami-plan-bridge">
       <div>
         <span>OPTIONAL 3-DAY PLANNING TOOL</span
         ><strong
@@ -2086,7 +2089,10 @@
         function place() {
           var s = document.getElementById("trip-planners"),
             f = document.querySelector("#root footer");
-          if (s && f && f.parentNode) f.parentNode.insertBefore(s, f);
+          if (s && f && f.parentNode) {
+            f.parentNode.insertBefore(s, f);
+            s.classList.remove("layout-pending");
+          }
         }
         if (document.readyState === "loading")
           document.addEventListener("DOMContentLoaded", place);
