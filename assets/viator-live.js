@@ -8,8 +8,9 @@
   const card = (tour) => {
     const article = document.createElement("article");
     article.className = "viator-live-card";
+    const optimizedImage = (width) => `/.netlify/images?url=${encodeURIComponent(tour.image)}&w=${width}&h=${Math.round(width * 2 / 3)}&fit=cover&q=65`;
     const image = tour.image
-      ? `<img src="${tour.image}" alt="" width="720" height="480" loading="lazy" decoding="async">`
+      ? `<img src="${optimizedImage(420)}" srcset="${optimizedImage(360)} 360w, ${optimizedImage(420)} 420w, ${optimizedImage(720)} 720w" sizes="(min-width: 900px) 410px, calc(100vw - 36px)" alt="" width="420" height="280" loading="lazy" decoding="async">`
       : '<div class="viator-live-placeholder" aria-hidden="true">Miami</div>';
     const rating = tour.rating
       ? `<span class="viator-live-rating">★ ${Number(tour.rating).toFixed(1)}${tour.reviews ? ` · ${Number(tour.reviews).toLocaleString()} reviews` : ""}</span>`
