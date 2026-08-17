@@ -10,3 +10,4 @@ export default async (request) => {
     return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
   } catch { return Response.json({ error: "Invalid event" }, { status: 400 }); }
 };
+
