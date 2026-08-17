@@ -11,6 +11,12 @@ const PREFERRED_PRODUCTS = [
 
 const preferredByCode = new Map(PREFERRED_PRODUCTS.map((item) => [item.code, item]));
 
+const apiHeaders = (apiKey) => ({
+  "exp-api-key": apiKey,
+  "Accept-Language": "en-US",
+  Accept: "application/json;version=2.0",
+});
+
 const json = (status, body, extra = {}) => new Response(JSON.stringify(body), {
   status,
   headers: {
@@ -56,6 +62,32 @@ const productScore = (product = {}) => {
   const title = String(product.title || "").toLowerCase();
   const intentBoost = /everglades|airboat|little havana|food|wynwood|boat|cruise|speedboat|city tour|south beach/.test(title) ? 1500 : 0;
   return reviews * Math.max(rating - 3, 0) + intentBoost;
+};
+
+const addMissingPreferredProducts = async (products, apiKey) => {
+  const productList = Array.isArray(products) ? products : [];
+  const presentCodes = new Set(productList.map((product) => String(product?.productCode || "").toUpperCase()));
+  const missing = PREFERRED_PRODUCTS.filter((item) => !presentCodes.has(item.code));
+  if (!missing.length) return productList;
+
+  const detailProducts = await Promise.all(missing.map(async ({ code }) => {
+    try {
+      const response = await fetch(
+        `https://api.viator.com/partner/products/${encodeURIComponent(code)}?campaign-value=homeLiveGrid2026`,
+        { headers: apiHeaders(apiKey) },
+      );
+      if (!response.ok) {
+        console.warn("Viator product detail request failed", code, response.status);
+        return null;
+      }
+      return await response.json().catch(() => null);
+    } catch (error) {
+      console.warn("Viator product detail request failed", code, error?.message || error);
+      return null;
+    }
+  }));
+
+  return [...productList, ...detailProducts.filter(Boolean)];
 };
 
 const selectProducts = (products = []) => {
@@ -105,9 +137,7 @@ export default async () => {
     const response = await fetch(VIATOR_URL, {
       method: "POST",
       headers: {
-        "exp-api-key": apiKey,
-        "Accept-Language": "en-US",
-        Accept: "application/json;version=2.0",
+        ...apiHeaders(apiKey),
         "Content-Type": "application/json;version=2.0",
       },
       body: JSON.stringify({
@@ -123,7 +153,8 @@ export default async () => {
       return json(502, { error: "Live tour results are temporarily unavailable." });
     }
 
-    const products = selectProducts(data.products || [])
+    const candidateProducts = await addMissingPreferredProducts(data.products || [], apiKey);
+    const products = selectProducts(candidateProducts)
       .map((product) => ({
         code: product.productCode,
         title: product.title,
