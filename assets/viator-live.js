@@ -219,7 +219,7 @@
     wireFunnel();
 
     try {
-      const response = await fetch("/.netlify/functions/viator-tours", { headers: { Accept: "application/json" } });
+      const response = await fetch("/.netlify/functions/viator-tours?v=20260817a", { headers: { Accept: "application/json" } });
       const data = await response.json();
       if (!response.ok || !Array.isArray(data.products) || !data.products.length) throw new Error("No products");
       const grid = section.querySelector(".viator-live-grid");
