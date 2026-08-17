@@ -13,7 +13,7 @@
     if (host.endsWith("tpo.lv")) return "Travelpayouts";
     return "";
   };
-  const placement = link => link.dataset.placement || link.closest("[data-affiliate-placement]")?.dataset.affiliatePlacement || link.closest("section,header,footer,aside,article")?.id || link.closest("section,header,footer,aside,article")?.className || "page";
+  const placement = link => link.dataset.placement || link.closest("[data-placement]")?.dataset.placement || link.closest("[data-affiliate-placement]")?.dataset.affiliatePlacement || link.closest("section,header,footer,aside,article")?.id || link.closest("section,header,footer,aside,article")?.className || "page";
   const place = () => {
     const footer = document.querySelector("#root footer");
     const packages = document.querySelector(".tcp-packages");
@@ -40,12 +40,32 @@
     track("page_view");
     if (document.body.dataset.productAccess) track("access_page_view", { product: document.body.dataset.productAccess });
     const seen = new WeakSet();
+    const observed = new WeakSet();
     const observer = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting && !seen.has(entry.target)) { seen.add(entry.target); track("product_view", { product: entry.target.dataset.product || "" }); } }), { threshold: .35 });
-    document.querySelectorAll("[data-product-view]").forEach(element => observer.observe(element));
+    const observeProducts = root => {
+      const elements = [];
+      if (root?.matches?.("[data-product-view]")) elements.push(root);
+      root?.querySelectorAll?.("[data-product-view]").forEach(element => elements.push(element));
+      elements.forEach(element => { if (!observed.has(element)) { observed.add(element); observer.observe(element); } });
+    };
+    observeProducts(document);
+    new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(observeProducts))).observe(document.documentElement, { childList: true, subtree: true });
     document.addEventListener("click", event => {
       const link = event.target.closest && event.target.closest("a[href]"); if (!link) return;
       if (link.href.includes("buy.stripe.com")) track("checkout_started", { product: link.dataset.product || "" });
-      else { try { const url = new URL(link.href, location.href); const partner = affiliatePartner(url.hostname); if (partner) track("affiliate_click", { partner, destination: url.origin + url.pathname, placement: String(placement(link)).slice(0,120), label: (link.textContent || "").trim().replace(/\s+/g," ").slice(0,140) }); } catch {} }
+      else {
+        try {
+          const url = new URL(link.href, location.href);
+          const partner = affiliatePartner(url.hostname);
+          if (partner) track("affiliate_click", {
+            product: link.dataset.product || link.closest("[data-product]")?.dataset.product || "",
+            partner,
+            destination: url.origin + url.pathname,
+            placement: String(placement(link)).slice(0, 120),
+            label: (link.textContent || "").trim().replace(/\s+/g," ").slice(0,140),
+          });
+        } catch {}
+      }
     }, true);
     const form = document.querySelector('form[name="miami-product-feedback"]');
     if (form) form.addEventListener("submit", () => track("feedback_submitted", { product: form.querySelector('[name="product"]')?.value || "" }));
@@ -56,3 +76,4 @@
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();
+
