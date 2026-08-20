@@ -6,6 +6,26 @@
     const body = JSON.stringify({ event, path: location.pathname, session: session(), ...details });
     if (navigator.sendBeacon) navigator.sendBeacon("/.netlify/functions/conversion-event", new Blob([body], { type: "application/json" }));
     else fetch("/.netlify/functions/conversion-event", { method: "POST", headers: { "content-type": "application/json" }, body, keepalive: true }).catch(() => {});
+    if (typeof window.gtag === "function") {
+      if (event === "checkout_started") {
+        const prices = { "Miami in 72 Hours": 49, "Miami Trip Command Center": 139 };
+        const product = details.product || "Miami digital product";
+        const price = prices[product];
+        window.gtag("event", "begin_checkout", {
+          currency: "USD",
+          ...(price ? { value: price } : {}),
+          items: [{ item_name: product, ...(price ? { price, quantity: 1 } : {}) }]
+        });
+      } else if (event === "affiliate_click") {
+        window.gtag("event", "affiliate_outbound", {
+          affiliate_partner: details.partner || "Affiliate partner",
+          link_domain: (() => { try { return new URL(details.destination).hostname; } catch { return ""; } })(),
+          placement: String(details.placement || "page").slice(0, 120)
+        });
+      } else if (event === "product_view") {
+        window.gtag("event", "view_item", { items: [{ item_name: details.product || "Miami digital product" }] });
+      }
+    }
   };
   const affiliatePartner = hostname => {
     const host = hostname.replace(/^www\./, "").toLowerCase();
