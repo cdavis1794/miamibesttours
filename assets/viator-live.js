@@ -1,6 +1,7 @@
 (() => {
   const ALL_TOURS_URL = "https://www.viator.com/Miami/d662-ttd?sortType=external&pid=P00161591&mcid=42383&medium=link&medium_version=selector";
   const GUIDE_LINKS = [
+    { label: "Cruise & flight-day tours", description: "Time-safe ideas for port arrivals, layovers and late flights", href: "/guides/miami-tours-for-cruise-passengers/" },
     { label: "Everglades tours", description: "Airboats, wildlife and transportation options", href: "/guides/everglades-tours-from-miami/" },
     { label: "Boat tours", description: "Biscayne Bay, skyline and sunset cruises", href: "/guides/miami-boat-tours/" },
     { label: "Little Havana", description: "Food walks, Cuban culture and cafecito", href: "/guides/little-havana-food-tours/" },

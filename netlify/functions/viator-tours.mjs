@@ -1,15 +1,29 @@
-const VIATOR_URL = "https://api.viator.com/partner/products/search?campaign-value=homeLiveGrid2026";
+const VIATOR_URL = "https://api.viator.com/partner/products/search";
 
-const PREFERRED_PRODUCTS = [
-  { code: "5096P35", category: "Everglades" },
-  { code: "28744P2", category: "Biscayne Bay" },
-  { code: "5304HAVANA", category: "Little Havana" },
-  { code: "18774P7", category: "Wynwood" },
-  { code: "5493174P5", category: "City Highlights" },
-  { code: "35834P1", category: "Biscayne Bay" },
-];
-
-const preferredByCode = new Map(PREFERRED_PRODUCTS.map((item) => [item.code, item]));
+const COLLECTIONS = {
+  home: {
+    campaign: "homeLiveGrid2026",
+    products: [
+      { code: "5096P35", category: "Everglades" },
+      { code: "28744P2", category: "Biscayne Bay" },
+      { code: "5304HAVANA", category: "Little Havana" },
+      { code: "18774P7", category: "Wynwood" },
+      { code: "5493174P5", category: "City Highlights" },
+      { code: "35834P1", category: "Biscayne Bay" },
+    ],
+  },
+  cruise: {
+    campaign: "cruiseLayover2026",
+    products: [
+      { code: "28744P2", category: "Short waterfront option", fit: "Compare its Bayside meeting point with your luggage and airport-transfer plan." },
+      { code: "35834P1", category: "Quick waterfront option", fit: "A compact experience when the departure point fits your route." },
+      { code: "18774P7", category: "Compact neighborhood option", fit: "Useful for a shorter window when Wynwood works with your transfer plan." },
+      { code: "5304HAVANA", category: "Half-day culture option", fit: "Best when the full walking-tour schedule leaves meaningful airport buffer." },
+      { code: "5493174P5", category: "City overview option", fit: "Verify the complete route, pickup details and return point before booking." },
+      { code: "5096P35", category: "Long layover only", fit: "Consider only after confirming transportation, luggage and the complete return schedule." },
+    ],
+  },
+};
 
 const apiHeaders = (apiKey) => ({
   "exp-api-key": apiKey,
@@ -43,7 +57,7 @@ const durationFor = (duration = {}) => {
   return min >= 60 ? `${Math.round(min / 60 * 10) / 10} hr` : `${min} min`;
 };
 
-const categoryFor = (product = {}) => {
+const categoryFor = (product = {}, preferredByCode = new Map()) => {
   const preferred = preferredByCode.get(String(product.productCode || "").toUpperCase());
   if (preferred) return preferred.category;
   const title = String(product.title || "").toLowerCase();
@@ -64,16 +78,16 @@ const productScore = (product = {}) => {
   return reviews * Math.max(rating - 3, 0) + intentBoost;
 };
 
-const addMissingPreferredProducts = async (products, apiKey) => {
+const addMissingPreferredProducts = async (products, apiKey, preferredProducts, campaign) => {
   const productList = Array.isArray(products) ? products : [];
   const presentCodes = new Set(productList.map((product) => String(product?.productCode || "").toUpperCase()));
-  const missing = PREFERRED_PRODUCTS.filter((item) => !presentCodes.has(item.code));
+  const missing = preferredProducts.filter((item) => !presentCodes.has(item.code));
   if (!missing.length) return productList;
 
   const detailProducts = await Promise.all(missing.map(async ({ code }) => {
     try {
       const response = await fetch(
-        `https://api.viator.com/partner/products/${encodeURIComponent(code)}?campaign-value=homeLiveGrid2026`,
+        `https://api.viator.com/partner/products/${encodeURIComponent(code)}?campaign-value=${encodeURIComponent(campaign)}`,
         { headers: apiHeaders(apiKey) },
       );
       if (!response.ok) {
@@ -90,7 +104,8 @@ const addMissingPreferredProducts = async (products, apiKey) => {
   return [...productList, ...detailProducts.filter(Boolean)];
 };
 
-const selectProducts = (products = []) => {
+const selectProducts = (products = [], preferredProducts = []) => {
+  const preferredByCode = new Map(preferredProducts.map((item) => [item.code, item]));
   const eligible = products.filter((product) =>
     product?.productCode &&
     product?.title &&
@@ -98,10 +113,10 @@ const selectProducts = (products = []) => {
     !/\b(french|german|portuguese)\b/i.test(product.title),
   );
   const byCode = new Map(eligible.map((product) => [String(product.productCode).toUpperCase(), product]));
-  const selected = PREFERRED_PRODUCTS.map((item) => byCode.get(item.code)).filter(Boolean);
+  const selected = preferredProducts.map((item) => byCode.get(item.code)).filter(Boolean);
   const selectedCodes = new Set(selected.map((product) => String(product.productCode).toUpperCase()));
   const categoryCounts = selected.reduce((counts, product) => {
-    const category = categoryFor(product);
+    const category = categoryFor(product, preferredByCode);
     counts.set(category, (counts.get(category) || 0) + 1);
     return counts;
   }, new Map());
@@ -114,7 +129,7 @@ const selectProducts = (products = []) => {
     if (selected.length >= 6) break;
     const reviews = Number(product.reviews?.totalReviews || 0);
     const rating = Number(product.reviews?.combinedAverageRating || 0);
-    const category = categoryFor(product);
+    const category = categoryFor(product, preferredByCode);
     if (reviews < 100 || rating < 4.2 || (categoryCounts.get(category) || 0) >= 2) continue;
     selected.push(product);
     categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
@@ -129,12 +144,16 @@ const selectProducts = (products = []) => {
   return selected.slice(0, 6);
 };
 
-export default async () => {
+export default async (request) => {
   const apiKey = process.env.VIATOR_API_KEY?.trim().replace(/^['"]|['"]$/g, "");
   if (!apiKey) return json(503, { error: "Tour availability is temporarily unavailable." });
 
+  const collectionKey = new URL(request.url).searchParams.get("collection") || "home";
+  const collection = COLLECTIONS[collectionKey] || COLLECTIONS.home;
+  const preferredByCode = new Map(collection.products.map((item) => [item.code, item]));
+
   try {
-    const response = await fetch(VIATOR_URL, {
+    const response = await fetch(`${VIATOR_URL}?campaign-value=${encodeURIComponent(collection.campaign)}`, {
       method: "POST",
       headers: {
         ...apiHeaders(apiKey),
@@ -153,13 +172,14 @@ export default async () => {
       return json(502, { error: "Live tour results are temporarily unavailable." });
     }
 
-    const candidateProducts = await addMissingPreferredProducts(data.products || [], apiKey);
-    const products = selectProducts(candidateProducts)
+    const candidateProducts = await addMissingPreferredProducts(data.products || [], apiKey, collection.products, collection.campaign);
+    const products = selectProducts(candidateProducts, collection.products)
       .map((product) => ({
         code: product.productCode,
         title: product.title,
-        category: categoryFor(product),
-        placement: `home-live-${String(product.productCode).toLowerCase()}`,
+        category: categoryFor(product, preferredByCode),
+        fit: preferredByCode.get(String(product.productCode || "").toUpperCase())?.fit || "",
+        placement: `${collectionKey}-live-${String(product.productCode).toLowerCase()}`,
         image: imageFor(product.images),
         rating: product.reviews?.combinedAverageRating || null,
         reviews: product.reviews?.totalReviews || 0,
@@ -169,7 +189,7 @@ export default async () => {
         url: product.productUrl,
       }));
 
-    return json(200, { products, updatedAt: new Date().toISOString() });
+    return json(200, { collection: collectionKey, products, updatedAt: new Date().toISOString() });
   } catch (error) {
     console.error("Viator API connection failed", error?.message || error);
     return json(502, { error: "Live tour results are temporarily unavailable." });
