@@ -43,10 +43,12 @@ const COLLECTIONS = {
 const affiliateUrlFor = (product, campaign) => {
   const productCode = String(product?.productCode || "").toUpperCase();
   const directUrl = PRODUCT_AFFILIATE_URLS.get(productCode);
-  if (!directUrl) return product?.productUrl || "";
+  const productUrl = directUrl || product?.productUrl;
+  if (!productUrl) return "";
 
-  const url = new URL(directUrl);
+  const url = new URL(productUrl);
   url.searchParams.set("campaign", campaign);
+  url.searchParams.set("target_lander", "NONE");
   return url.toString();
 };
 
