@@ -3,9 +3,22 @@
   if (!root) return;
 
   const collection = root.dataset.collection || "home";
+  const query = new URLSearchParams(window.location.search);
+  const isYouTubeVisit = query.get("utm_source")?.toLowerCase() === "youtube";
+  const requestCollection = collection === "cruise" && isYouTubeVisit
+    ? "cruise-youtube"
+    : collection;
   const grid = root.querySelector("[data-tour-grid]");
   const status = root.querySelector("[data-tour-status]");
   const updated = root.querySelector("[data-tour-updated]");
+
+  if (isYouTubeVisit) {
+    document.querySelectorAll("a[data-youtube-campaign]").forEach((link) => {
+      const url = new URL(link.href);
+      url.searchParams.set("campaign", link.dataset.youtubeCampaign);
+      link.href = url.toString();
+    });
+  }
 
   const money = (amount, currency) => {
     if (typeof amount !== "number") return "Check price";
@@ -78,7 +91,7 @@
 
   const load = async () => {
     try {
-      const response = await fetch(`/.netlify/functions/viator-tours?collection=${encodeURIComponent(collection)}&v=20260822a`, {
+      const response = await fetch(`/.netlify/functions/viator-tours?collection=${encodeURIComponent(requestCollection)}&v=20260822b`, {
         headers: { Accept: "application/json" },
       });
       const data = await response.json();

@@ -1,5 +1,14 @@
 const VIATOR_URL = "https://api.viator.com/partner/products/search";
 
+const CRUISE_PRODUCTS = [
+  { code: "28744P2", category: "Short waterfront option", fit: "Compare its Bayside meeting point with your luggage and airport-transfer plan." },
+  { code: "35834P1", category: "Quick waterfront option", fit: "A compact experience when the departure point fits your route." },
+  { code: "18774P7", category: "Compact neighborhood option", fit: "Useful for a shorter window when Wynwood works with your transfer plan." },
+  { code: "5304HAVANA", category: "Half-day culture option", fit: "Best when the full walking-tour schedule leaves meaningful airport buffer." },
+  { code: "5493174P5", category: "City overview option", fit: "Verify the complete route, pickup details and return point before booking." },
+  { code: "5096P35", category: "Long layover only", fit: "Consider only after confirming transportation, luggage and the complete return schedule." },
+];
+
 const COLLECTIONS = {
   home: {
     campaign: "homeLiveGrid2026",
@@ -14,14 +23,11 @@ const COLLECTIONS = {
   },
   cruise: {
     campaign: "cruiseLayover2026",
-    products: [
-      { code: "28744P2", category: "Short waterfront option", fit: "Compare its Bayside meeting point with your luggage and airport-transfer plan." },
-      { code: "35834P1", category: "Quick waterfront option", fit: "A compact experience when the departure point fits your route." },
-      { code: "18774P7", category: "Compact neighborhood option", fit: "Useful for a shorter window when Wynwood works with your transfer plan." },
-      { code: "5304HAVANA", category: "Half-day culture option", fit: "Best when the full walking-tour schedule leaves meaningful airport buffer." },
-      { code: "5493174P5", category: "City overview option", fit: "Verify the complete route, pickup details and return point before booking." },
-      { code: "5096P35", category: "Long layover only", fit: "Consider only after confirming transportation, luggage and the complete return schedule." },
-    ],
+    products: CRUISE_PRODUCTS,
+  },
+  "cruise-youtube": {
+    campaign: "youtubeCruise2026",
+    products: CRUISE_PRODUCTS,
   },
 };
 
