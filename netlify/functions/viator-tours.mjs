@@ -1,5 +1,14 @@
 const VIATOR_URL = "https://api.viator.com/partner/products/search";
 
+const PRODUCT_AFFILIATE_URLS = new Map([
+  ["5096P35", "https://www.viator.com/tours/Miami/BIG-Everglades-Experience-with-Transportation/d662-5096P35?pid=P00161591&mcid=42383&medium=link&medium_version=selector"],
+  ["28744P2", "https://www.viator.com/tours/Miami/Miami-Sightseeing-Cruise-to-Millionaires-Homes/d662-28744P2?pid=P00161591&mcid=42383&medium=link&medium_version=selector"],
+  ["5304HAVANA", "https://www.viator.com/tours/Miami/Little-Havana-Food-and-Walking-Tour-in-Miami/d662-5304HAVANA?pid=P00161591&mcid=42383&medium=link&medium_version=selector"],
+  ["18774P7", "https://www.viator.com/tours/Miami/Wynwood-Graffiti-Golf-Cart-Tour/d662-18774P7?pid=P00161591&mcid=42383&medium=link&medium_version=selector"],
+  ["5493174P5", "https://www.viator.com/tours/Miami/Miami-City-Tour/d662-5493174P5?pid=P00161591&mcid=42383&medium=link&medium_version=selector"],
+  ["35834P1", "https://www.viator.com/tours/Miami/Speedboat-Sightseeing-Tour-in-Miami/d662-35834P1?pid=P00161591&mcid=42383&medium=link&medium_version=selector"],
+]);
+
 const CRUISE_PRODUCTS = [
   { code: "28744P2", category: "Short waterfront option", fit: "Compare its Bayside meeting point with your luggage and airport-transfer plan." },
   { code: "35834P1", category: "Quick waterfront option", fit: "A compact experience when the departure point fits your route." },
@@ -29,6 +38,16 @@ const COLLECTIONS = {
     campaign: "youtubeCruise2026",
     products: CRUISE_PRODUCTS,
   },
+};
+
+const affiliateUrlFor = (product, campaign) => {
+  const productCode = String(product?.productCode || "").toUpperCase();
+  const directUrl = PRODUCT_AFFILIATE_URLS.get(productCode);
+  if (!directUrl) return product?.productUrl || "";
+
+  const url = new URL(directUrl);
+  url.searchParams.set("campaign", campaign);
+  return url.toString();
 };
 
 const apiHeaders = (apiKey) => ({
@@ -192,7 +211,7 @@ export default async (request) => {
         price: product.pricing?.summary?.fromPrice || null,
         currency: product.pricing?.currency || "USD",
         duration: durationFor(product.duration),
-        url: product.productUrl,
+        url: affiliateUrlFor(product, collection.campaign),
       }));
 
     return json(200, { collection: collectionKey, products, updatedAt: new Date().toISOString() });
