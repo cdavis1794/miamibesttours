@@ -7,6 +7,10 @@ const PRODUCT_AFFILIATE_URLS = new Map([
   ["18774P7", "https://www.viator.com/tours/Miami/Wynwood-Graffiti-Golf-Cart-Tour/d662-18774P7?pid=P00161591&mcid=42383&medium=link&medium_version=selector"],
   ["5493174P5", "https://www.viator.com/tours/Miami/Miami-City-Tour/d662-5493174P5?pid=P00161591&mcid=42383&medium=link&medium_version=selector"],
   ["35834P1", "https://www.viator.com/tours/Miami/Speedboat-Sightseeing-Tour-in-Miami/d662-35834P1?pid=P00161591&mcid=42383&medium=link&medium_version=selector"],
+  ["21428P2", "https://www.viator.com/tours/Miami/Everglades-Tour-from-Miami-with-Transportation/d662-21428P2?pid=P00161591&mcid=42383&medium=link&medium_version=selector"],
+  ["38439P1", "https://www.viator.com/tours/Miami/Day-Trip-to-Key-West-from-Miami/d662-38439P1?pid=P00161591&mcid=42383&medium=link&medium_version=selector"],
+  ["8836P7", "https://www.viator.com/tours/Miami/Party-Boat-Cruise-in-Miami/d662-8836P7?pid=P00161591&mcid=42383&medium=link&medium_version=selector"],
+  ["8836P2", "https://www.viator.com/tours/Miami/Pirates-Adventures-Sightseeing-Tour-from-Miami/d662-8836P2?pid=P00161591&mcid=42383&medium=link&medium_version=selector"],
 ]);
 
 const CRUISE_PRODUCTS = [
@@ -18,9 +22,36 @@ const CRUISE_PRODUCTS = [
   { code: "5096P35", category: "Long layover only", fit: "Consider only after confirming transportation, luggage and the complete return schedule." },
 ];
 
+const BOAT_PRODUCTS = [
+  { code: "28744P2", category: "Narrated sightseeing", fit: "A lower-cost 90-minute format; verify the current route, vessel, departure point, and narration before booking." },
+  { code: "35834P1", category: "Fast sightseeing", fit: "A compact 45-minute option for motion and skyline views, not a calm narrated cruise." },
+  { code: "8836P7", category: "Skyline and city lights", fit: "Compare the departure time, music, seating, and included drinks with the atmosphere your group wants." },
+  { code: "8836P2", category: "Family-friendly sightseeing", fit: "A themed sightseeing format with strong review context; confirm accessibility, shade, and the exact route." },
+];
+
+const EVERGLADES_PRODUCTS = [
+  { code: "21428P2", category: "Small-group transfer", fit: "Prioritize this format when pickup convenience, a smaller vehicle, and more guide interaction justify the higher price." },
+  { code: "5096P35", category: "Value roundtrip transfer", fit: "A high-volume option with roundtrip bus transportation; compare total pickup time and the wildlife-exhibit format." },
+];
+
+const KEY_WEST_PRODUCTS = [
+  { code: "38439P1", category: "Day trip with activity options", fit: "Compare the complete 15-hour schedule, pickup point, usable island time, and optional-activity check-in details." },
+];
+
+const LITTLE_HAVANA_PRODUCTS = [
+  { code: "5304HAVANA", category: "Food and walking tour", fit: "A review-rich 2.5-hour format; confirm dietary accommodations, tasting count, walking pace, and group size." },
+];
+
+const FAMILY_PRODUCTS = [
+  { code: "28744P2", category: "Lower-demand family option", fit: "Useful when a shorter duration and low physical demand matter; verify shade, restrooms, and child policies." },
+  { code: "5493174P5", category: "City overview", fit: "A multi-stop overview for groups that value breadth; verify the vehicle, boarding, and exact return point." },
+  { code: "5304HAVANA", category: "Food and culture", fit: "Best for groups comfortable with walking and shared tastings; confirm dietary and age fit first." },
+];
+
 const COLLECTIONS = {
   home: {
     campaign: "homeLiveGrid2026",
+    limit: 6,
     products: [
       { code: "5096P35", category: "Everglades" },
       { code: "28744P2", category: "Biscayne Bay" },
@@ -32,11 +63,43 @@ const COLLECTIONS = {
   },
   cruise: {
     campaign: "cruiseLayover2026",
+    limit: 6,
     products: CRUISE_PRODUCTS,
   },
   "cruise-youtube": {
     campaign: "youtubeCruise2026",
+    limit: 6,
     products: CRUISE_PRODUCTS,
+  },
+  boat: {
+    campaign: "boatGuideLive2026",
+    limit: 4,
+    strict: true,
+    products: BOAT_PRODUCTS,
+  },
+  everglades: {
+    campaign: "evergladesGuideLive2026",
+    limit: 2,
+    strict: true,
+    products: EVERGLADES_PRODUCTS,
+  },
+  "key-west": {
+    campaign: "keyWestGuideLive2026",
+    limit: 1,
+    strict: true,
+    products: KEY_WEST_PRODUCTS,
+  },
+  "little-havana": {
+    campaign: "littleHavanaGuideLive2026",
+    limit: 1,
+    strict: true,
+    products: LITTLE_HAVANA_PRODUCTS,
+  },
+  family: {
+    campaign: "familyGuideLive2026",
+    limit: 3,
+    strict: true,
+    products: FAMILY_PRODUCTS,
   },
 };
 
@@ -131,7 +194,7 @@ const addMissingPreferredProducts = async (products, apiKey, preferredProducts, 
   return [...productList, ...detailProducts.filter(Boolean)];
 };
 
-const selectProducts = (products = [], preferredProducts = []) => {
+const selectProducts = (products = [], preferredProducts = [], limit = 6, strict = false) => {
   const preferredByCode = new Map(preferredProducts.map((item) => [item.code, item]));
   const eligible = products.filter((product) =>
     product?.productCode &&
@@ -141,6 +204,7 @@ const selectProducts = (products = [], preferredProducts = []) => {
   );
   const byCode = new Map(eligible.map((product) => [String(product.productCode).toUpperCase(), product]));
   const selected = preferredProducts.map((item) => byCode.get(item.code)).filter(Boolean);
+  if (strict) return selected.slice(0, limit);
   const selectedCodes = new Set(selected.map((product) => String(product.productCode).toUpperCase()));
   const categoryCounts = selected.reduce((counts, product) => {
     const category = categoryFor(product, preferredByCode);
@@ -153,7 +217,7 @@ const selectProducts = (products = [], preferredProducts = []) => {
     .sort((a, b) => productScore(b) - productScore(a));
 
   for (const product of ranked) {
-    if (selected.length >= 6) break;
+    if (selected.length >= limit) break;
     const reviews = Number(product.reviews?.totalReviews || 0);
     const rating = Number(product.reviews?.combinedAverageRating || 0);
     const category = categoryFor(product, preferredByCode);
@@ -163,12 +227,12 @@ const selectProducts = (products = [], preferredProducts = []) => {
   }
 
   for (const product of ranked) {
-    if (selected.length >= 6) break;
+    if (selected.length >= limit) break;
     if (selected.includes(product)) continue;
     selected.push(product);
   }
 
-  return selected.slice(0, 6);
+  return selected.slice(0, limit);
 };
 
 export default async (request) => {
@@ -200,7 +264,7 @@ export default async (request) => {
     }
 
     const candidateProducts = await addMissingPreferredProducts(data.products || [], apiKey, collection.products, collection.campaign);
-    const products = selectProducts(candidateProducts, collection.products)
+    const products = selectProducts(candidateProducts, collection.products, collection.limit || 6, collection.strict === true)
       .map((product) => ({
         code: product.productCode,
         title: product.title,

@@ -1,6 +1,18 @@
 [functions]
   directory = "netlify/functions"
 
+[[redirects]]
+from = "/blog/best-boat-tours-miami-2026.html"
+to = "/guides/miami-boat-tours/"
+status = 301
+force = true
+
+[[redirects]]
+from = "/blog/best-boat-tours-miami-2026"
+to = "/guides/miami-boat-tours/"
+status = 301
+force = true
+
 [images]
 remote_images = [
   "https://images\\.unsplash\\.com/.*",
@@ -23,3 +35,9 @@ for = "/assets/*"
 
 [headers.values]
 Cache-Control = "public, max-age=3600, must-revalidate"
+
+[[headers]]
+for = "/access/*"
+
+[headers.values]
+X-Robots-Tag = "noindex, nofollow, noarchive"
