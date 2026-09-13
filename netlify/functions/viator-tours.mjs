@@ -61,6 +61,19 @@ const COLLECTIONS = {
       { code: "35834P1", category: "Biscayne Bay" },
     ],
   },
+  social: {
+    campaign: "dailyFacebookPick2026",
+    limit: 6,
+    strict: true,
+    products: [
+      { code: "28744P2", category: "Biscayne Bay", fit: "A compact waterfront choice; confirm the departure point, route, and current schedule before booking." },
+      { code: "5304HAVANA", category: "Little Havana", fit: "A food-and-culture walk; confirm dietary accommodations, tasting details, walking pace, and group size." },
+      { code: "5096P35", category: "Everglades", fit: "A transfer-included option; compare the full pickup window, total clock, and included experience." },
+      { code: "18774P7", category: "Wynwood", fit: "A shorter neighborhood option when the meeting point and route fit your Miami day." },
+      { code: "35834P1", category: "Biscayne Bay", fit: "A fast sightseeing format rather than a calm narrated cruise; confirm conditions and departure details." },
+      { code: "5493174P5", category: "City Highlights", fit: "A broader city overview; verify the current route, vehicle, boarding point, and return timing." },
+    ],
+  },
   cruise: {
     campaign: "cruiseLayover2026",
     limit: 6,
@@ -168,7 +181,7 @@ const productScore = (product = {}) => {
   return reviews * Math.max(rating - 3, 0) + intentBoost;
 };
 
-const addMissingPreferredProducts = async (products, apiKey, preferredProducts, campaign) => {
+const addMissingPreferredProducts = async (products, apiKey, preferredProducts, campaign, fetchImpl = globalThis.fetch) => {
   const productList = Array.isArray(products) ? products : [];
   const presentCodes = new Set(productList.map((product) => String(product?.productCode || "").toUpperCase()));
   const missing = preferredProducts.filter((item) => !presentCodes.has(item.code));
@@ -176,7 +189,7 @@ const addMissingPreferredProducts = async (products, apiKey, preferredProducts, 
 
   const detailProducts = await Promise.all(missing.map(async ({ code }) => {
     try {
-      const response = await fetch(
+      const response = await fetchImpl(
         `https://api.viator.com/partner/products/${encodeURIComponent(code)}?campaign-value=${encodeURIComponent(campaign)}`,
         { headers: apiHeaders(apiKey) },
       );
@@ -235,16 +248,18 @@ const selectProducts = (products = [], preferredProducts = [], limit = 6, strict
   return selected.slice(0, limit);
 };
 
-export default async (request) => {
-  const apiKey = process.env.VIATOR_API_KEY?.trim().replace(/^['"]|['"]$/g, "");
-  if (!apiKey) return json(503, { error: "Tour availability is temporarily unavailable." });
+const cleanApiKey = (value) => String(value || "").trim().replace(/^['"]|['"]$/g, "");
 
-  const collectionKey = new URL(request.url).searchParams.get("collection") || "home";
-  const collection = COLLECTIONS[collectionKey] || COLLECTIONS.home;
+const safeTourCode = (value) => String(value || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 32);
+
+export async function fetchTourCollection(collectionKey = "home", { apiKey = cleanApiKey(process.env.VIATOR_API_KEY), fetchImpl = globalThis.fetch, highlight = "" } = {}) {
+  if (!apiKey) throw new Error("Missing VIATOR_API_KEY.");
+
+  const resolvedCollectionKey = COLLECTIONS[collectionKey] ? collectionKey : "home";
+  const collection = COLLECTIONS[resolvedCollectionKey];
   const preferredByCode = new Map(collection.products.map((item) => [item.code, item]));
 
-  try {
-    const response = await fetch(`${VIATOR_URL}?campaign-value=${encodeURIComponent(collection.campaign)}`, {
+  const response = await fetchImpl(`${VIATOR_URL}?campaign-value=${encodeURIComponent(collection.campaign)}`, {
       method: "POST",
       headers: {
         ...apiHeaders(apiKey),
@@ -257,14 +272,14 @@ export default async (request) => {
       }),
     });
 
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      console.error("Viator API request failed", response.status, data?.code || data?.message || "unknown");
-      return json(502, { error: "Live tour results are temporarily unavailable." });
-    }
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    console.error("Viator API request failed", response.status, data?.code || data?.message || "unknown");
+    throw new Error(`Viator API request failed (${response.status}).`);
+  }
 
-    const candidateProducts = await addMissingPreferredProducts(data.products || [], apiKey, collection.products, collection.campaign);
-    const products = selectProducts(candidateProducts, collection.products, collection.limit || 6, collection.strict === true)
+  const candidateProducts = await addMissingPreferredProducts(data.products || [], apiKey, collection.products, collection.campaign, fetchImpl);
+  const products = selectProducts(candidateProducts, collection.products, collection.limit || 6, collection.strict === true)
       .map((product) => ({
         code: product.productCode,
         title: product.title,
@@ -280,7 +295,25 @@ export default async (request) => {
         url: affiliateUrlFor(product, collection.campaign),
       }));
 
-    return json(200, { collection: collectionKey, products, updatedAt: new Date().toISOString() });
+  const highlightedCode = safeTourCode(highlight);
+  if (highlightedCode) {
+    products.sort((left, right) => Number(safeTourCode(right.code) === highlightedCode) - Number(safeTourCode(left.code) === highlightedCode));
+  }
+
+  return { collection: resolvedCollectionKey, products, updatedAt: new Date().toISOString() };
+}
+
+export default async (request) => {
+  const apiKey = cleanApiKey(process.env.VIATOR_API_KEY);
+  if (!apiKey) return json(503, { error: "Tour availability is temporarily unavailable." });
+
+  const requestUrl = new URL(request.url);
+  const collectionKey = requestUrl.searchParams.get("collection") || "home";
+  const highlight = requestUrl.searchParams.get("highlight") || requestUrl.searchParams.get("tour") || "";
+
+  try {
+    const result = await fetchTourCollection(collectionKey, { apiKey, highlight });
+    return json(200, result);
   } catch (error) {
     console.error("Viator API connection failed", error?.message || error);
     return json(502, { error: "Live tour results are temporarily unavailable." });

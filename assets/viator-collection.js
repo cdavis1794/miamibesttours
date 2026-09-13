@@ -5,6 +5,7 @@
   const collection = root.dataset.collection || "home";
   const query = new URLSearchParams(window.location.search);
   const isYouTubeVisit = query.get("utm_source")?.toLowerCase() === "youtube";
+  const highlightedTour = query.get("tour") || "";
   const requestCollection = collection === "cruise" && isYouTubeVisit
     ? "cruise-youtube"
     : collection;
@@ -91,7 +92,11 @@
 
   const load = async () => {
     try {
-      const response = await fetch(`/.netlify/functions/viator-tours?collection=${encodeURIComponent(requestCollection)}&v=20260822b`, {
+      const endpoint = new URL("/.netlify/functions/viator-tours", window.location.origin);
+      endpoint.searchParams.set("collection", requestCollection);
+      if (highlightedTour) endpoint.searchParams.set("highlight", highlightedTour);
+      endpoint.searchParams.set("v", "20260912a");
+      const response = await fetch(endpoint, {
         headers: { Accept: "application/json" },
       });
       const data = await response.json();
